@@ -44,6 +44,10 @@
     };
   });
 
+  function closeMenu() {
+    menuOpen = false;
+  }
+
   function openLogin() {
     menuOpen = false;
     authMessage = '';
@@ -82,22 +86,36 @@
 </script>
 
 <header class="navbar">
-  <a href="/" class="logo" onclick={() => (menuOpen = false)}>
+  <a href="/" class="logo" onclick={closeMenu}>
     HOROLOGUE<span>.</span>
   </a>
 
   <nav class:open={menuOpen}>
-    <a href="/" onclick={() => (menuOpen = false)}>Home</a>
-    <a href="/shop" onclick={() => (menuOpen = false)}>Watches</a>
-    <a href="/#collections" onclick={() => (menuOpen = false)}>Collections</a>
-    <a href="/#about" onclick={() => (menuOpen = false)}>Our Story</a>
-    <a href="/#contact" onclick={() => (menuOpen = false)}>Contact</a>
+    <a href="/" onclick={closeMenu}>Home</a>
+    <a href="/shop" onclick={closeMenu}>Watches</a>
+    <a href="/#collections" onclick={closeMenu}>Collections</a>
+    <a href="/#about" onclick={closeMenu}>Our Story</a>
+    <a href="/#contact" onclick={closeMenu}>Contact</a>
+
+    {#if !checkingAuth && isLoggedIn}
+      <a class="mobile-profile" href="/profile" onclick={closeMenu}>
+        My Profile
+      </a>
+    {/if}
   </nav>
 
   <div class="nav-actions">
     {#if checkingAuth}
       <span class="auth-loading">ACCOUNT</span>
     {:else if isLoggedIn}
+      <a
+        href="/profile"
+        class="profile-link"
+        onclick={closeMenu}
+      >
+        PROFILE
+      </a>
+
       <button
         class="login-link"
         type="button"
@@ -119,7 +137,7 @@
     <a
       href="/cart"
       class="bag-link"
-      onclick={() => (menuOpen = false)}
+      onclick={closeMenu}
     >
       Shopping Bag
     </a>
@@ -184,7 +202,8 @@
   }
 
   nav a,
-  .bag-link {
+  .bag-link,
+  .profile-link {
     color: #c1beb5;
     font-size: 11px;
     letter-spacing: 1px;
@@ -193,7 +212,8 @@
   }
 
   nav a:hover,
-  .bag-link:hover {
+  .bag-link:hover,
+  .profile-link:hover {
     color: #c5a46d;
   }
 
@@ -201,6 +221,14 @@
     display: flex;
     align-items: center;
     gap: 20px;
+  }
+
+  .profile-link {
+    color: #c5a46d;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    white-space: nowrap;
   }
 
   .login-link {
@@ -257,6 +285,10 @@
     cursor: pointer;
   }
 
+  .mobile-profile {
+    display: none;
+  }
+
   @media (max-width: 1000px) {
     .navbar {
       gap: 18px;
@@ -309,6 +341,11 @@
     nav.open {
       display: flex;
     }
+
+    .mobile-profile {
+      display: block;
+      color: #c5a46d;
+    }
   }
 
   @media (max-width: 420px) {
@@ -323,6 +360,11 @@
 
     .bag-link {
       font-size: 10px;
+    }
+
+    .profile-link {
+      font-size: 9px;
+      letter-spacing: 1px;
     }
 
     .login-link {
