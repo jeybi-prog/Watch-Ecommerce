@@ -9,6 +9,7 @@ import { supabase } from './supabaseClient.js';
  * @property {number} price
  * @property {string} description
  * @property {string} tag
+ * @property {string | null} image
  * @property {number} quantity
  */
 
@@ -20,6 +21,7 @@ import { supabase } from './supabaseClient.js';
  * @property {number | string} price
  * @property {string} description
  * @property {string} tag
+ * @property {string | null} image
  */
 
 /**
@@ -30,6 +32,7 @@ import { supabase } from './supabaseClient.js';
  * @property {number | string} price
  * @property {string} description
  * @property {string | null} [tag]
+ * @property {string | null} [image]
  */
 
 /**
@@ -79,7 +82,8 @@ function createCart() {
             brand,
             price,
             description,
-            tag
+            tag,
+            image
           )
         `)
         .eq('user_id', currentUserId);
@@ -88,8 +92,6 @@ function createCart() {
 
       if (userId !== currentUserId) return;
 
-      // Supabase's inferred relationship type may differ from the
-      // expected shape, so define the expected row structure here.
       const rows = /** @type {DatabaseCartRow[]} */ (
         /** @type {unknown} */ (data ?? [])
       );
@@ -98,7 +100,6 @@ function createCart() {
         .map((row) => {
           const relatedProduct = row.products;
 
-          // Supabase relationships can return one object or an array.
           const product = Array.isArray(relatedProduct)
             ? relatedProduct[0]
             : relatedProduct;
@@ -112,6 +113,7 @@ function createCart() {
             price: Number(product.price),
             description: product.description,
             tag: product.tag ?? '',
+            image: product.image ?? null,
             quantity: Number(row.quantity)
           };
         })
@@ -196,6 +198,7 @@ function createCart() {
           ...product,
           price: Number(product.price),
           tag: product.tag ?? '',
+          image: product.image ?? null,
           quantity: 1
         }
       ];

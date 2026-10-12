@@ -14,17 +14,6 @@
   let checkingOut = $state(false);
   let paymentMethod = $state('COD');
 
-  let deliveryAddress = $state({
-    full_name: '',
-    phone: '',
-    street_address: '',
-    barangay: '',
-    city: '',
-    province: '',
-    postal_code: '',
-    notes: ''
-  });
-
   const paymentMethods = [
     {
       value: 'COD',
@@ -42,16 +31,6 @@
       description: 'Transfer instructions will be provided separately.'
     }
   ];
-
-  const requiredAddressFields = [
-    ['full_name', 'Full name'],
-    ['phone', 'Phone number'],
-    ['street_address', 'Street address'],
-    ['barangay', 'Barangay'],
-    ['city', 'City / Municipality'],
-    ['province', 'Province'],
-    ['postal_code', 'Postal code']
-];
 
   onMount(() => {
     let active = true;
@@ -126,31 +105,6 @@
 
     if (checkingSession || checkingOut) return;
 
-    // Validate required delivery address fields.
-    
-    // Validate required delivery address fields.
-    const missingAddress =
-      !deliveryAddress.full_name.trim()
-        ? 'full name'
-        : !deliveryAddress.phone.trim()
-          ? 'phone number'
-          : !deliveryAddress.street_address.trim()
-            ? 'street address'
-            : !deliveryAddress.barangay.trim()
-              ? 'barangay'
-              : !deliveryAddress.city.trim()
-                ? 'city / municipality'
-                : !deliveryAddress.province.trim()
-                  ? 'province'
-                  : !deliveryAddress.postal_code.trim()
-                    ? 'postal code'
-                    : null;
-
-    if (missingAddress) {
-      checkoutMessage = `Please enter your ${missingAddress}.`;
-      return;
-    }
-
     checkingOut = true;
 
     try {
@@ -206,40 +160,6 @@
 
       if (!orderId) {
         throw new Error('Supabase did not return an order number.');
-      }
-
-      // Prepare the delivery address.
-      const addressToSave = {
-        full_name: deliveryAddress.full_name.trim(),
-        phone: deliveryAddress.phone.trim(),
-        street_address: deliveryAddress.street_address.trim(),
-        barangay: deliveryAddress.barangay.trim(),
-        city: deliveryAddress.city.trim(),
-        province: deliveryAddress.province.trim(),
-        postal_code: deliveryAddress.postal_code.trim(),
-        notes: deliveryAddress.notes.trim()
-      };
-
-      // Save the address to the order.
-      const { error: addressError } = await supabase
-        .from('orders')
-        .update({
-          delivery_address: addressToSave
-        })
-        .eq('id', orderId)
-        .eq('user_id', session.user.id);
-
-      if (addressError) {
-        console.error(
-          'Delivery address save failed:',
-          addressError
-        );
-
-        throw new Error(
-          `Your order (${orderId}) was created, but the delivery ` +
-          `address could not be saved. Please contact the store ` +
-          `before placing another order. Details: ${addressError.message}`
-        );
       }
 
       await cart.loadCart();
@@ -305,7 +225,11 @@
         {#each cart.items as item (item.id)}
           <article class="cart-item">
             <div class="item-image">
-              <span>H</span>
+              {#if item.image}
+                <img src={item.image} alt={item.name} />
+              {:else}
+                  <span>H</span>
+              {/if}
             </div>
 
             <div class="item-details">
@@ -365,107 +289,10 @@
           <strong>{formatPrice(cart.total)}</strong>
         </div>
 
-        <!-- DELIVERY ADDRESS -->
-        <div class="delivery-section">
-          <p class="eyebrow">DELIVERY ADDRESS</p>
-
-          <p class="payment-intro">
-            Enter the address where you want your order delivered.
-          </p>
-
-          <div class="address-grid">
-            <label class="address-field full-width">
-              <span>Full name *</span>
-              <input
-                type="text"
-                autocomplete="name"
-                placeholder="Recipient's full name"
-                bind:value={deliveryAddress.full_name}
-                required
-              />
-            </label>
-
-            <label class="address-field full-width">
-              <span>Phone number *</span>
-              <input
-                type="tel"
-                autocomplete="tel"
-                placeholder="e.g. 09XXXXXXXXX"
-                bind:value={deliveryAddress.phone}
-                required
-              />
-            </label>
-
-            <label class="address-field full-width">
-              <span>House / Street / Building *</span>
-              <input
-                type="text"
-                autocomplete="street-address"
-                placeholder="House number, street, subdivision, building"
-                bind:value={deliveryAddress.street_address}
-                required
-              />
-            </label>
-
-            <label class="address-field">
-              <span>Barangay *</span>
-              <input
-                type="text"
-                autocomplete="address-level3"
-                placeholder="Barangay"
-                bind:value={deliveryAddress.barangay}
-                required
-              />
-            </label>
-
-            <label class="address-field">
-              <span>City / Municipality *</span>
-              <input
-                type="text"
-                autocomplete="address-level2"
-                placeholder="City or municipality"
-                bind:value={deliveryAddress.city}
-                required
-              />
-            </label>
-
-            <label class="address-field">
-              <span>Province *</span>
-              <input
-                type="text"
-                autocomplete="address-level1"
-                placeholder="Province"
-                bind:value={deliveryAddress.province}
-                required
-              />
-            </label>
-
-            <label class="address-field">
-              <span>Postal code *</span>
-              <input
-                type="text"
-                inputmode="numeric"
-                autocomplete="postal-code"
-                placeholder="Postal code"
-                bind:value={deliveryAddress.postal_code}
-                required
-              />
-            </label>
-
-            <label class="address-field full-width">
-              <span>Delivery notes (optional)</span>
-              <textarea
-                rows="3"
-                placeholder="Landmark, gate instructions, or other details"
-                bind:value={deliveryAddress.notes}
-              ></textarea>
-            </label>
-          </div>
-        </div>
-
         <!-- PAYMENT METHOD -->
         <div class="payment-section">
           <p class="eyebrow">PAYMENT METHOD</p>
+
           <p class="payment-intro">
             Choose how you would like to pay.
           </p>
@@ -674,6 +501,14 @@
     border: 1px solid #30302a;
   }
 
+  .item-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10px;
+  }
+
   .item-image span {
     color: #8f7953;
     font-family: Georgia, serif;
@@ -786,64 +621,6 @@
     color: #c5a46d;
     font-size: 19px;
     font-weight: 400;
-  }
-
-  .delivery-section {
-    margin: 5px 0 24px;
-    padding-top: 18px;
-    border-top: 1px solid #30302a;
-  }
-
-  .delivery-section .eyebrow {
-    margin-bottom: 8px;
-  }
-
-  .address-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 13px;
-  }
-
-  .address-field {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    min-width: 0;
-    color: #aaa79e;
-    font-size: 10px;
-  }
-
-  .address-field.full-width {
-    grid-column: 1 / -1;
-  }
-
-  .address-field input,
-  .address-field textarea {
-    width: 100%;
-    min-width: 0;
-    padding: 12px 10px;
-    border: 1px solid #393931;
-    border-radius: 0;
-    outline: none;
-    background: #171815;
-    color: #f5f0e6;
-    font: inherit;
-    font-size: 11px;
-  }
-
-  .address-field input:focus,
-  .address-field textarea:focus {
-    border-color: #c5a46d;
-  }
-
-  .address-field input::placeholder,
-  .address-field textarea::placeholder {
-    color: #77766f;
-  }
-
-  .address-field textarea {
-    resize: vertical;
-    line-height: 1.5;
   }
 
   .payment-section {
@@ -985,14 +762,6 @@
     .cart-page {
       padding-right: 5%;
       padding-left: 5%;
-    }
-
-    .address-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .address-field.full-width {
-      grid-column: auto;
     }
 
     .cart-header {
